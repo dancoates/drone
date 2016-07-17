@@ -1,0 +1,29 @@
+
+h1,h2,h3,h4,h5 {
+    font-family: 'Inconsolata', monospace;
+    color: $secondary-color;
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
+    font-weight: normal;
+    line-height: 1.2;
+
+    &.subtitle {
+        color: $secondary-color;
+        margin-top: 0.1em;
+    }
+
+    &.withSubtitle {
+        margin-bottom: 0;
+    }
+
+}
+
+h1 {
+    font-size: rem-calc(70);
+    color: $primary-color;
+    border-bottom: 3px solid $faded-color;
+}
+
+h2 {
+    font-size: rem-calc(50);
+}

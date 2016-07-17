@@ -1,0 +1,7 @@
+
+
+.container {
+    max-width: rem-calc($container-width);
+    width: 100%;
+    margin: rem-calc(50) auto;
+}

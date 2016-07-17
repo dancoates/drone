@@ -1,0 +1,18 @@
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
+body, html {
+    background: $background-color;
+    color: $text-color;
+}
+
+html {
+    font-size: #{$base-font-size}px;
+}
+
+body {
+    font-family: 'Lora', serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+}
