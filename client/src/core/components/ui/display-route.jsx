@@ -60,7 +60,13 @@ export default class DisplayRoute extends React.Component {
         const xbounds = [route.bounds.lower[0], route.bounds.upper[0]];
         const ybounds = [route.bounds.lower[1], route.bounds.upper[1]];
 
-        const rendersPerFrame  = 10; // Rendering once per frame is too slow, this speeds things up
+        const optimized = !!route.optimizedPath;
+        const pathToDraw = optimized ? route.optimizedPath : route.path;
+
+        console.log(optimized ? route.optimizedPath.length : '');
+        // @TODO identify start and end point?
+
+        const rendersPerFrame = optimized ? 5 : 10; // Rendering once per frame is too slow, this speeds things up
 
         // Variables to be updated while looping through path
         let i = 0;                  // The current index
@@ -74,7 +80,7 @@ export default class DisplayRoute extends React.Component {
             // Cancel rendering if react has changed
             if(this.iteration !== iteration) return;
 
-            const point = route.path[i] === 'x' ? lastPos : route.path[i];
+            const point = pathToDraw[i] === 'x' ? lastPos : pathToDraw[i];
 
             const x = this.normaliseCoordinates(point[0], xbounds, canvasWidth);
             const y = this.normaliseCoordinates(point[1], ybounds, canvasHeight);
@@ -87,7 +93,7 @@ export default class DisplayRoute extends React.Component {
             incrementalCount[point[0]][point[1]] += 1;
 
             // If photo was taken then a billboard needs to be drawn
-            if(route.path[i] === 'x') {
+            if(pathToDraw[i] === 'x' || optimized) {
                 layers.billboards.ctx.beginPath();
                 layers.billboards.ctx.arc(x, y, 2, 0, Math.PI * 2, false);
 
@@ -103,16 +109,20 @@ export default class DisplayRoute extends React.Component {
                     this.refs.meta_billboards.textContent = newBillboardCount;
                     lastBillboardCount = newBillboardCount;
                 }
-
+            }
             // Otherwise, draw a path
-            } else {
+            if(pathToDraw[i] !== 'x') {
                 layers.path.ctx.beginPath();
                 layers.path.ctx.moveTo(lastx, lasty);
                 layers.path.ctx.lineTo(x,y);
-                layers.path.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                layers.path.ctx.strokeStyle = optimized ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.2)';
                 layers.path.ctx.stroke();
                 layers.path.ctx.closePath();
-                distance += 1;
+                if(optimized) {
+                    distance += Math.sqrt(Math.pow(point[0] - lastPos[0], 2) + Math.pow(point[1] - lastPos[1], 2)); // @TODO check against output from backend
+                } else {
+                    distance += 1;
+                }
 
                 // Draw text
                 const xDirection = point[0] < 0 ? 'West'  : 'East';
@@ -131,7 +141,7 @@ export default class DisplayRoute extends React.Component {
 
             
 
-            if(i < route.path.length) {
+            if(i < pathToDraw.length) {
                 if(rendersThisFrame < rendersPerFrame) {
                     rendersThisFrame ++;
                     render();
