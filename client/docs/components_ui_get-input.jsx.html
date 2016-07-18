@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: components/ui/get-input.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: components/ui/get-input.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React from 'react';
+
+import defaultInput from 'core/data/default-input';
+
+
+/**
+ *
+ * Component to prompt user to enter drone path
+ * @extends {React.Component}
+ *
+ */
+class GetInput extends React.Component {
+
+    /**
+     *
+     * Pass props to super and initiate members/bind methods to instance
+     * @param {Object} props - React props passed to component
+     */
+    constructor(props) {
+        super(props);
+
+
+        this.loadDefault = this.loadDefault.bind(this);
+        this.showModal = this.showModal.bind(this);
+        this.hideModal = this.hideModal.bind(this);
+        this.handleModalTextChange = this.handleModalTextChange.bind(this);
+        this.submitModalText = this.submitModalText.bind(this);
+
+        /**
+         *
+         * Initialise ui state
+         * @type {Object}
+         * @property {Boolean} modal - Whether the modal is currently shown 
+         * @property {String} text - The drone path input text 
+         * @property {String|Boolean} error - Current error message. `false` if no error 
+         *
+         */
+        this.state = {
+            modal : false,
+            text : '',
+            error : false
+        };
+    }
+
+    /**
+     *
+     * Call onInput handler and pass default input
+     */
+    loadDefault() {
+        this.props.onInput(defaultInput);
+    }
+
+    /**
+     *
+     * Show the modal for user to enter custom text
+     */
+    showModal() {
+        this.setState({
+            modal : true,
+            error : false
+        });
+    }
+
+    /**
+     *
+     * Hide the modal for user to enter custom text
+     * @TODO combine with showModal
+     */
+    hideModal() {
+        this.setState({
+            modal : false,
+            error : false
+        });
+    }
+
+    /**
+     *
+     * Update state as text changes in modal
+     */
+    handleModalTextChange(e) {
+        this.setState(Object.assign({}, this.state, {
+            text : e.target.value,
+            error : false
+        }));
+    }
+
+    /**
+     *
+     * Validate and submit modal text
+     */
+    submitModalText() {
+        let text = this.state.text;
+        let valid = text &amp;&amp; !/[^\^>&lt;vx]/.test(text);
+
+        if(valid) {
+            this.props.onInput(text);
+            this.setState(Object.assign({}, this.state, {
+                modal : false
+            }));
+        } else {
+            this.setState(Object.assign({}, this.state, {
+                error : true
+            }));
+        }
+    }
+
+    /**
+     *
+     * Render component
+     */ 
+    render() {
+        return (
+            &lt;div className='getInput'>
+                &lt;h2 className='getInput_heading'>drone instructions&lt;/h2>
+                &lt;div className='getInput_options'>
+                    &lt;div className='getInput_options_option'>
+                        &lt;button className="getInput_button" onClick={this.loadDefault}>
+                            Use default input.txt data
+                        &lt;/button>
+                    &lt;/div>
+                    &lt;div className='getInput_options_option'>
+                        &lt;button className="getInput_button" onClick={this.showModal}>
+                            Paste or enter custom input
+                        &lt;/button>
+                    &lt;/div>
+                &lt;/div>
+
+                {this.state.modal ? (
+                    &lt;div className="getInput_modal">
+                        &lt;textarea
+                            onChange={this.handleModalTextChange}
+                            value={this.state.text}
+                            className="getInput_modal_text"
+                        >&lt;/textarea>
+                        {
+                            this.state.error ? (
+                                &lt;span className='getInput_modal_error'>Invalid Input&lt;/span>
+                            ) : null
+                        }
+                        &lt;button className="getInput_button" onClick={this.submitModalText}>
+                            Do It
+                        &lt;/button>
+                        &lt;div className="getInput_modal_close" onClick={this.hideModal}>
+                            Close
+                        &lt;/div>
+                    &lt;/div>
+                ) : null}
+
+            &lt;/div>
+        );
+    }
+}
+
+
+/**
+ * Define proptypes for GetInput component
+ */
+GetInput.propTypes = {
+    onInput : React.PropTypes.func.isRequired
+};
+
+
+export default GetInput;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-core_actions_index.html">core/actions/index</a></li><li><a href="module-core_reducers_index.html">core/reducers/index</a></li><li><a href="module-core_reducers_routing.html">core/reducers/routing</a></li></ul><h3>Classes</h3><ul><li><a href="App.html">App</a></li><li><a href="DisplayRoute.html">DisplayRoute</a></li><li><a href="Drone.html">Drone</a></li><li><a href="GetInput.html">GetInput</a></li><li><a href="PathParser.html">PathParser</a></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Jul 20 2016 00:02:48 GMT+1000 (AEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
