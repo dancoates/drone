@@ -8,7 +8,7 @@ module.exports = {
     output : {
         path : './dist/',
         filename : 'bundle.js',
-        publicPath : '/dist/'
+        publicPath : 'client/dist/'
     },
     resolve :  {
         extensions : ['', '.js.jsx', '.jsx', '.js', '.scss', '.css'],
@@ -60,6 +60,6 @@ module.exports = {
     },
     devServer : {
         host: '0.0.0.0',
-        publicPath : '/dist/'
+        publicPath : 'client/dist/'
     }
 };
