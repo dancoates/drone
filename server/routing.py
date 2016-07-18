@@ -1,25 +1,32 @@
 
 
-# from ortools.constraint_solver import pywrapcp
-# from ortools.constraint_solver import routing_enums_pb2
-# import math
-
-
 import falcon
 from falcon_cors import CORS
 import json
+import subprocess
+
  
-class Routing:
+class RoutingRequestHandler:
     def on_post(self, req, resp):
-        resp.body = req.body
-        # """Handles GET requests"""
-        # quote = {
-        #     'quote': 'I\'ve always been more interested in the future than in the past.',
-        #     'author': 'Grace Hopper'
-        # }
+        body = req.stream.read();
 
-        # resp.body = json.dumps(quote)
+        try:
+            req.context['doc'] = json.loads(body.decode('utf-8'))
 
-cors = CORS(allow_origins_list=['*'])
+        except (ValueError, UnicodeDecodeError):
+            raise falcon.HTTPError(falcon.HTTP_753,
+                                   'Malformed JSON',
+                                   'Could not decode the request body. The '
+                                   'JSON was incorrect or not encoded as '
+                                   'UTF-8.')
+
+
+        child = subprocess.Popen(['python', 'route.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        out, err = child.communicate(json.dumps(req.context['doc']))
+        print out
+        resp.body = out
+        
+
+cors = CORS(allow_all_origins=True,allow_all_headers=True,allow_all_methods=True)
 api = falcon.API(middleware=[cors.middleware])
-api.add_route('/', Routing())
+api.add_route('/', RoutingRequestHandler())
