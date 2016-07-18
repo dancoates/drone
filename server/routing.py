@@ -21,5 +21,5 @@ class Routing:
         # resp.body = json.dumps(quote)
 
 cors = CORS(allow_origins_list=['*'])
-api = falcon.API()
+api = falcon.API(middleware=[cors.middleware])
 api.add_route('/', Routing())
