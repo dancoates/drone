@@ -10,10 +10,16 @@ export class App extends React.Component {
     constructor(props) {
         super(props);
         this.handleInput = this.handleInput.bind(this);
+        this.handleOptimize = this.handleOptimize.bind(this);
     } 
     
     handleInput(data) {
         this.props.dispatch(actions.input(data));
+    }
+
+
+    handleOptimize() {
+        this.props.dispatch(actions.optimizeRoute());
     }
 
     render() {
@@ -26,6 +32,8 @@ export class App extends React.Component {
                 <DisplayRoute
                     route={this.props.routing ? this.props.routing.route : null}
                 />
+
+                <button onClick={this.handleOptimize}>Optimize</button>
             </div>
         );
     }
