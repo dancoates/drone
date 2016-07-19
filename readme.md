@@ -1,4 +1,12 @@
 
+# Drone
+
+This repo contains a small webapp that manages optimization of drone routing instructions.
+
+- [View the app](http://drone.dancoat.es/)
+- [View documentation](http://drone.dancoat.es/docs/)
+
+
 
 # Development setup
 
