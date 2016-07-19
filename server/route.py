@@ -46,7 +46,7 @@ def main(_):
             index = assignment.Value(routing.NextVar(index))
         route.append(billboards[routing.IndexToNode(index)])
 
-        sys.stdout.write(json.dumps(route))
+        sys.stdout.write(json.dumps({ 'distance' : total_distance, 'route': route}))
     else:
         sys.stdout.write('error')
 
