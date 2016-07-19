@@ -261,16 +261,23 @@ class DisplayRoute extends React.Component {
                             </div>
 
                             <div className='displayRoute_meta_value'>
-                                {!this.props.route.optimizedPath ? (
-                                    <div className='displayRoute_meta_value_name'>
-                                        Calculating Optimized route ...
-                                        <small>(this can take a while)</small>
-                                    </div>
-                                ) : (
-                                    <button className='displayRoute_button' onClick={this.toggleOptimizedRoute}>
-                                        {this.state.showingOptimized ? 'Hide' : 'Show'} Optimized Route
-                                    </button>
-                                )}
+                                {
+                                    this.props.route.billboards.length > 1000 ? (
+                                        <div className='displayRoute_meta_value_name'>
+                                            Unable to optimize
+                                            <small>too many billboards</small>
+                                        </div>
+                                    ) :!this.props.route.optimizedPath ? (
+                                        <div className='displayRoute_meta_value_name'>
+                                            Calculating Optimized route ...
+                                            <small>(this can take a while)</small>
+                                        </div>
+                                    ) : (
+                                        <button className='displayRoute_button' onClick={this.toggleOptimizedRoute}>
+                                            {this.state.showingOptimized ? 'Hide' : 'Show'} Optimized Route
+                                        </button>
+                                    )
+                                }
                                 
                                 
                             </div>

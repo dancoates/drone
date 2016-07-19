@@ -54,7 +54,7 @@ export function optimizeRoute() {
         );
 
         // rudimentary measure to stop server melting
-        if(billboards.length > 900) {
+        if(billboards.length > 1000) {
             return;
         }
 
