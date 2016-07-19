@@ -1,10 +1,8 @@
 
-
 import falcon
 from falcon_cors import CORS
 import json
 import subprocess
-
  
 class RoutingRequestHandler:
     def on_post(self, req, resp):
@@ -20,7 +18,8 @@ class RoutingRequestHandler:
                                    'JSON was incorrect or not encoded as '
                                    'UTF-8.')
 
-
+        # Call route.py as subprocess, seeing as it runs some C++ code, was having difficulty running
+        # Through wsgi 
         child = subprocess.Popen(['python', 'route.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         out, err = child.communicate(json.dumps(req.context['doc']))
         print out

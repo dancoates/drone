@@ -8,6 +8,8 @@ import json
 data = sys.stdin.read()
 billboards = json.loads(data)['billboards']
 
+# Callback passed to SetArcCostEvaluatorOfAllVehicles to calculate
+# distance between any two points. Just uses some basic Pythag.
 def calculate_distance(from_index, to_index):
     from_coord = billboards[from_index];
     to_coord = billboards[to_index];
