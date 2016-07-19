@@ -1,41 +1,99 @@
 import React from 'react';
 
-export default class DisplayRoute extends React.Component {
+
+
+/**
+ *
+ * Component to render users chosen route to canvas
+ * @extends {React.Component}
+ *
+ */
+class DisplayRoute extends React.Component {
+
+    /**
+     *
+     * Pass props to super and initiate members
+     * @param {Object} props - React props passed to component
+     */
     constructor(props) {
         super(props);
+
+        /**
+         *
+         * Amount of padding to allow around edges of canvas.
+         * This is used to ensure that billboard circles are not cut off.
+         */
         this.canvasPadding = 20;
-        this.iteration = 0; // Used to stop rendering outside of react if react updates
+
+        this.toggleOptimizedRoute = this.toggleOptimizedRoute.bind(this);
+
+        this.state = {
+            showingOptimized : false
+        };
     }
 
-    componentWillUpdate() {
-        this.iteration += 1;
+    toggleOptimizedRoute() {
+        this.setState({
+            showingOptimized : !this.state.showingOptimized
+        });
     }
 
+
+    /**
+     *
+     * React lifecycle method. If component recieves `route` props then
+     * render canvas outside of react (see `renderRoute` method for details)
+     */
     componentDidUpdate() {
         if(!this.props.route) return;
 
         this.renderRoute();
+
+        // Scroll down to visualization (shouldn't really be handled here)
+        window.location.hash = 'route-map';
     }
 
+    /**
+     *
+     * Convert passed coordinates to normalized pixel positions on page.
+     *
+     * @param {Number} pos    -           The x or y position from left or top side.
+     *
+     * @param {Array}  bounds -           The x or y bounds in the form [lower, upper]
+     *                                    used to calculate the distance from furthest
+     *                                    left/up to furthest right/down point.
+     *
+     * @param {Number} canvasSideLength - The length of the relevant (width or height) dimension
+
+     */
     normaliseCoordinates(pos, bounds, canvasSideLength) {
         return (this.canvasPadding / 2) +                    // Push down/left by padding amount
                (pos - bounds[0]) / (bounds[1] - bounds[0]) * // Fraction that point is across bounds
                (canvasSideLength - this.canvasPadding);      // Multiplied by usable canvas width
     }
 
+
+    /**
+     *
+     * Render routes to canvas.
+     */
     renderRoute() {
 
-        const iteration = this.iteration;
-
+        // Save route to shorter var.
         const route = this.props.route;
 
         const xCoordRange = route.bounds.upper[0] - route.bounds.lower[0]; // The range of x values
         const yCoordRange = route.bounds.upper[1] - route.bounds.lower[1]; // The range of y values
+
         let canvasRatio = xCoordRange / yCoordRange;
         canvasRatio = canvasRatio < 10 ? canvasRatio : 10; // Limit ratio to 10:1
 
         // Use multiple canvas layers so that they can be rendered separately
         const layers = {
+            startPoint : {
+                canvas : this.refs.startPoint,
+                ctx : this.refs.startPoint.getContext('2d')
+            },
             path : {
                 canvas : this.refs.path,
                 ctx : this.refs.path.getContext('2d')
@@ -43,6 +101,14 @@ export default class DisplayRoute extends React.Component {
             billboards : {
                 canvas : this.refs.billboards,
                 ctx : this.refs.billboards.getContext('2d')
+            },
+            pathOptimized : {
+                canvas : this.refs.pathOptimized,
+                ctx : this.refs.pathOptimized.getContext('2d')
+            },
+            billboardsOptimized : {
+                canvas : this.refs.billboardsOptimized,
+                ctx : this.refs.billboardsOptimized.getContext('2d')
             }
         };
 
@@ -51,125 +117,133 @@ export default class DisplayRoute extends React.Component {
         const canvasHeight = 960 / canvasRatio;
 
         // Set heights and widths of layers and contexts
+        // Also clears canvases
         layers.path.canvas.width = canvasWidth;
         layers.path.canvas.height = canvasHeight;
         layers.billboards.canvas.width = canvasWidth;
         layers.billboards.canvas.height = canvasHeight;
+        layers.pathOptimized.canvas.width = canvasWidth;
+        layers.pathOptimized.canvas.height = canvasHeight;
+        layers.billboardsOptimized.canvas.width = canvasWidth;
+        layers.billboardsOptimized.canvas.height = canvasHeight;
+        layers.startPoint.canvas.width = canvasWidth;
+        layers.startPoint.canvas.height = canvasHeight;
+
 
         // Save x and y bounds separately for utility
         const xbounds = [route.bounds.lower[0], route.bounds.upper[0]];
         const ybounds = [route.bounds.lower[1], route.bounds.upper[1]];
 
-        const optimized = !!route.optimizedPath;
-        const pathToDraw = optimized ? route.optimizedPath : route.path;
-
-        console.log(optimized ? route.optimizedPath.length : '');
-        // @TODO identify start and end point?
-
-        const rendersPerFrame = optimized ? 5 : 10; // Rendering once per frame is too slow, this speeds things up
-
-        // Variables to be updated while looping through path
-        let i = 0;                  // The current index
-        let lastPos = [0,0];        // The x,y coords of last iteration
-        let incrementalCount = {};  // An incremental count of photos taken of each billboard
-        let rendersThisFrame = 0;   // Variable to be incremented for each render in a frame
-        let distance = 0;           // Count the distance travelled over time
-        let lastBillboardCount = 0; // Stop billboard count from jumping around
-
-        const render = function() {
-            // Cancel rendering if react has changed
-            if(this.iteration !== iteration) return;
-
-            const point = pathToDraw[i] === 'x' ? lastPos : pathToDraw[i];
-
-            const x = this.normaliseCoordinates(point[0], xbounds, canvasWidth);
-            const y = this.normaliseCoordinates(point[1], ybounds, canvasHeight);
-            const lastx = this.normaliseCoordinates(lastPos[0], xbounds, canvasWidth);
-            const lasty = this.normaliseCoordinates(lastPos[1], ybounds, canvasHeight);
-
-            // Update incremental count object
-            incrementalCount[point[0]] = incrementalCount[point[0]] || {};
-            incrementalCount[point[0]][point[1]] = incrementalCount[point[0]][point[1]] || 0;
-            incrementalCount[point[0]][point[1]] += 1;
-
-            // If photo was taken then a billboard needs to be drawn
-            if(pathToDraw[i] === 'x' || optimized) {
-                layers.billboards.ctx.beginPath();
-                layers.billboards.ctx.arc(x, y, 2, 0, Math.PI * 2, false);
-
-                // Set fill style to hsla color range between green and red. Red spots indicate many
-                // photos taken
-                layers.billboards.ctx.fillStyle = 'hsla(' + (100 - (incrementalCount[point[0]][point[1]] / 10) * 80) +', 100%, 60%, 1)';
-                layers.billboards.ctx.fill();
-                layers.billboards.ctx.closePath();
-
-                // Update billboard count
-                let newBillboardCount = route.billboardMap[point[0]][point[1]] + 1;
-                if(newBillboardCount > lastBillboardCount) {
-                    this.refs.meta_billboards.textContent = newBillboardCount;
-                    lastBillboardCount = newBillboardCount;
-                }
+        if(!this.state.showingOptimized) {
+            this.renderPath(layers.path.ctx, route.path, 0.2, xbounds, ybounds, canvasHeight, canvasWidth);
+            this.renderBillboards(layers.billboards.ctx, route.billboards, xbounds, ybounds, canvasHeight, canvasWidth);
+        } else {
+            if(route.optimizedPath) {
+                this.renderPath(layers.pathOptimized.ctx, route.optimizedPath, 0.6, xbounds, ybounds, canvasHeight, canvasWidth);
+                this.renderBillboards(layers.billboardsOptimized.ctx, route.optimizedPath.map(
+                    point => ({coord : point, photoCount : 1})
+                ), xbounds, ybounds, canvasHeight, canvasWidth);
             }
-            // Otherwise, draw a path
-            if(pathToDraw[i] !== 'x') {
-                layers.path.ctx.beginPath();
-                layers.path.ctx.moveTo(lastx, lasty);
-                layers.path.ctx.lineTo(x,y);
-                layers.path.ctx.strokeStyle = optimized ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.2)';
-                layers.path.ctx.stroke();
-                layers.path.ctx.closePath();
-                if(optimized) {
-                    distance += Math.sqrt(Math.pow(point[0] - lastPos[0], 2) + Math.pow(point[1] - lastPos[1], 2)); // @TODO check against output from backend
-                } else {
-                    distance += 1;
-                }
-
-                // Draw text
-                const xDirection = point[0] < 0 ? 'West'  : 'East';
-                const yDirection = point[1] < 0 ? 'North' : 'South';
-
-                this.refs.meta_distance.textContent = distance;
-                this.refs.meta_position.textContent = Math.abs(point[0]) + 'km ' + xDirection + ' ' + 
-                                                      Math.abs(point[1]) + 'km ' + yDirection + ' ';
-            }
-
-            
-
-            lastPos = point;
-            i += 1;
+        }
 
 
-            
 
-            if(i < pathToDraw.length) {
-                if(rendersThisFrame < rendersPerFrame) {
-                    rendersThisFrame ++;
-                    render();
-                } else {
-                    rendersThisFrame = 0;
-                    requestAnimationFrame(render);
-                }
-            }
-        }.bind(this);
 
-        render();
+        // render the starting point
+        const startX = this.normaliseCoordinates(0, xbounds, canvasWidth);
+        const startY = this.normaliseCoordinates(0, ybounds, canvasHeight);
+
+        layers.startPoint.ctx.beginPath();
+        layers.startPoint.ctx.arc(startX, startY, 4, 0, Math.PI * 2, false);
+        layers.startPoint.ctx.fillStyle = 'rgb(0, 167, 255)';
+        layers.startPoint.ctx.fill();
+        layers.startPoint.ctx.closePath();
 
     }
 
+    /**
+     *
+     * Render a path to a context
+     * @param {Object} ctx - The context to render to
+     * @param {Array} path - The array to render
+     * @param {Number|String} opacity - The opacity to render the string at
+     * @param {Array} xbounds - The min/max x values to use to normalize x position
+     * @param {Array} ybounds - The min/max y values to use to normalize y position
+     * @param {Number} canvasHeight - height of the canvas
+     * @param {Number} canvasWidth - width of the canvas
+     */
+    renderPath(ctx, path, opacity, xbounds, ybounds, canvasHeight, canvasWidth) {
+        for (var i = 1; i < path.length; i++) {
+            const point = path[i];
+            const lastPoint = path[i - 1];
+
+            const x = this.normaliseCoordinates(point[0], xbounds, canvasWidth);
+            const y = this.normaliseCoordinates(point[1], ybounds, canvasHeight);
+
+            const lastx = this.normaliseCoordinates(lastPoint[0], xbounds, canvasWidth);
+            const lasty = this.normaliseCoordinates(lastPoint[1], ybounds, canvasHeight);
+
+            ctx.beginPath();
+            ctx.moveTo(lastx, lasty);
+            ctx.lineTo(x,y);
+            ctx.strokeStyle = 'rgba(255, 255, 255, '+opacity+')';
+            ctx.stroke();
+            ctx.closePath();
+        }
+        
+    }
+
+    /**
+     *
+     * Render a path to a context
+     * @param {Object} ctx - The context to render to
+     * @param {Array} billboards - The billboards to render
+     * @param {Array} xbounds - The min/max x values to use to normalize x position
+     * @param {Array} ybounds - The min/max y values to use to normalize y position
+     * @param {Number} canvasHeight - height of the canvas
+     * @param {Number} canvasWidth - width of the canvas
+     */
+    renderBillboards(ctx, billboards, xbounds, ybounds, canvasHeight, canvasWidth) {
+        for (var i = 0; i < billboards.length; i++) {
+
+            const billboard = billboards[i];
+            const x = this.normaliseCoordinates(billboard.coord[0], xbounds, canvasWidth);
+            const y = this.normaliseCoordinates(billboard.coord[1], ybounds, canvasHeight);
+
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2, false);
+            ctx.fillStyle = 'hsla(' + (100 - (billboard.photoCount / 10) * 200) +', 100%, 60%, 1)';
+            ctx.fill();
+            ctx.closePath();
+        }
+    }
+
+
+
+
+    /**
+     *
+     * Render component
+     */ 
     render() {
+
+
         return (
-            <div className='displayRoute'>
+            <div className='displayRoute' id='route-map'>
                 {this.props.route ? (
                     <div className='displayRoute_layers'>
                         <canvas ref='path'></canvas>
                         <canvas ref='billboards'></canvas>
+                        <canvas ref='pathOptimized'></canvas>
+                        <canvas ref='billboardsOptimized'></canvas>
+                        <canvas ref='startPoint'></canvas>
                         <div className='displayRoute_meta'>
                             <div className='displayRoute_meta_value'>
                                 <div className='displayRoute_meta_value_name'>
-                                    Distance
+                                    Distance Travelled
                                 </div>
                                 <div ref='meta_distance' className='displayRoute_meta_value_num'>
-                                    
+                                    {this.state.showingOptimized && this.props.route.optimizedDistance ? this.props.route.optimizedDistance : this.props.route.distance}
                                 </div>
                                 <div className='displayRoute_meta_value_units'>
                                     KM
@@ -182,17 +256,23 @@ export default class DisplayRoute extends React.Component {
                                     <small>(at least once)</small>
                                 </div>
                                 <div ref='meta_billboards' className='displayRoute_meta_value_num displayRoute_meta_value_num-large'>
-                                    
+                                    {this.props.route.billboards.length}
                                 </div>
                             </div>
 
                             <div className='displayRoute_meta_value'>
-                                <div className='displayRoute_meta_value_name'>
-                                    Position from start
-                                </div>
-                                <div ref='meta_position' className='displayRoute_meta_value_num'>
-                                    
-                                </div>
+                                {!this.props.route.optimizedPath ? (
+                                    <div className='displayRoute_meta_value_name'>
+                                        Calculating Optimized route ...
+                                        <small>(this can take a while)</small>
+                                    </div>
+                                ) : (
+                                    <button className='displayRoute_button' onClick={this.toggleOptimizedRoute}>
+                                        {this.state.showingOptimized ? 'Hide' : 'Show'} Optimized Route
+                                    </button>
+                                )}
+                                
+                                
                             </div>
                         </div>
                     </div>
@@ -202,7 +282,12 @@ export default class DisplayRoute extends React.Component {
     }
 }
 
+/**
+ * Define proptypes for DisplayRoute component
+ */
 DisplayRoute.propTypes = {
     route : React.PropTypes.object
 };
 
+
+export default DisplayRoute;

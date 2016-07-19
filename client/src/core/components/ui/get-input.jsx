@@ -2,14 +2,39 @@ import React from 'react';
 
 import defaultInput from 'core/data/default-input';
 
-export default class GetInput extends React.Component {
+
+/**
+ *
+ * Component to prompt user to enter drone path
+ * @extends {React.Component}
+ *
+ */
+class GetInput extends React.Component {
+
+    /**
+     *
+     * Pass props to super and initiate members/bind methods to instance
+     * @param {Object} props - React props passed to component
+     */
     constructor(props) {
         super(props);
+
+
         this.loadDefault = this.loadDefault.bind(this);
         this.showModal = this.showModal.bind(this);
         this.hideModal = this.hideModal.bind(this);
         this.handleModalTextChange = this.handleModalTextChange.bind(this);
         this.submitModalText = this.submitModalText.bind(this);
+
+        /**
+         *
+         * Initialise ui state
+         * @type {Object}
+         * @property {Boolean} modal - Whether the modal is currently shown 
+         * @property {String} text - The drone path input text 
+         * @property {String|Boolean} error - Current error message. `false` if no error 
+         *
+         */
         this.state = {
             modal : false,
             text : '',
@@ -17,10 +42,18 @@ export default class GetInput extends React.Component {
         };
     }
 
+    /**
+     *
+     * Call onInput handler and pass default input
+     */
     loadDefault() {
         this.props.onInput(defaultInput);
     }
 
+    /**
+     *
+     * Show the modal for user to enter custom text
+     */
     showModal() {
         this.setState({
             modal : true,
@@ -28,6 +61,11 @@ export default class GetInput extends React.Component {
         });
     }
 
+    /**
+     *
+     * Hide the modal for user to enter custom text
+     * @TODO combine with showModal
+     */
     hideModal() {
         this.setState({
             modal : false,
@@ -35,6 +73,10 @@ export default class GetInput extends React.Component {
         });
     }
 
+    /**
+     *
+     * Update state as text changes in modal
+     */
     handleModalTextChange(e) {
         this.setState(Object.assign({}, this.state, {
             text : e.target.value,
@@ -42,6 +84,10 @@ export default class GetInput extends React.Component {
         }));
     }
 
+    /**
+     *
+     * Validate and submit modal text
+     */
     submitModalText() {
         let text = this.state.text;
         let valid = text && !/[^\^><vx]/.test(text);
@@ -58,10 +104,13 @@ export default class GetInput extends React.Component {
         }
     }
 
+    /**
+     *
+     * Render component
+     */ 
     render() {
         return (
             <div className='getInput'>
-                <h2 className='getInput_heading'>drone instructions</h2>
                 <div className='getInput_options'>
                     <div className='getInput_options_option'>
                         <button className="getInput_button" onClick={this.loadDefault}>
@@ -101,7 +150,13 @@ export default class GetInput extends React.Component {
     }
 }
 
+
+/**
+ * Define proptypes for GetInput component
+ */
 GetInput.propTypes = {
     onInput : React.PropTypes.func.isRequired
 };
 
+
+export default GetInput;

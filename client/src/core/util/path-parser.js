@@ -1,9 +1,42 @@
 
-export default class PathParser {
+/**
+ * Class to parse drone movement path
+ */
+class PathParser {
+
+    /**
+     * takes a string of <>V^x characters and converts it into a rich data about the
+     * path taken by the drone.
+     * @param {String} path - A string containing <>v^x characters
+     */
     constructor(path) {
+        if(
+            !path ||
+            typeof path !== 'string' ||
+            /[^\^><vx]/.test(path)
+        ) {
+            throw new Error('Invalid path passed to parser');
+        }
+
+        /**
+         * The string path taken by the drone
+         * @type {string}
+         */
         this.path = path;
 
+
+        /**
+         * constant defining the starting [x,y] coordinates of the drone
+         * @type {array}
+         */
         this.STARTPOS = [0,0];
+
+        /**
+         * A map used to link each action character to an effect matrix
+         * The first item in each array is the axis index (0 for x and 1 for y)
+         * The second item is the movement delta. -1 being up/left and 1 being down/right
+         * @type {object}
+         */
         this.MOVE_MAP = {
             '<' : [0, -1], // Move -1 in x axis
             '>' : [0,  1], // Move +1 in x axis
@@ -12,6 +45,11 @@ export default class PathParser {
         };
     }
 
+
+    /**
+     * Parse the path string and return an object with route information.
+     * @return {Route} - An object containing information about the route taken by the drone
+     */
     parse() {
         const path = this.path;
 
@@ -63,13 +101,38 @@ export default class PathParser {
                 };
 
                 result.billboards[result.billboardMap[x][y]].photoCount += 1; // increment photo count
-
-                result.path.push('x'); // Save photo location to path
             }
 
             return result;
         }, {
-            billboards   : [], // A list of all the billboards
+
+            /**
+             * @typedef Route
+             * @type Object
+             *
+             * @property {Object[]} billboards               - A list of all the billboards 
+             * @property {Array}    billboards[0].coord      - [x,y] coordinate for billboard
+             * @property {Number}   billboards[0].photoCount - Number of photos taken of billboard
+             * 
+             * @property {Object}   billboardMap             - A map to allow easy access to 
+             *                                                 billboards within billboards array.
+             *                                                 `billboardMap[x][y]` will return the
+             *                                                 index of that billboard in the array
+             *                                                 so it can be quickly accessed like:
+             *                                                 `billboards[billboardMap[x][y]]`
+             *
+             * @property {Array}    currentPos               - The current position of the drone
+             *                                                 can also be used as final position
+             *                                                 once route parsing is finished
+             *
+             * @property {Object}   bounds                   - The lower and upper bounds of drone
+             *                                                 positions discovered during routing.
+             * 
+             * @property {Array}    path                     - An array of all points visitied
+             * @property {Number}   distance                 - The total distance covered.
+             */
+
+            billboards   : [],
             billboardMap : {}, // A map to allow easy access to billboard data using x,y coords
             currentpos : [this.STARTPOS[0], this.STARTPOS[1]], // The current [x,y] position
             bounds : {         // The lower and upperbounds for x and y coordinates
@@ -81,3 +144,5 @@ export default class PathParser {
         });
     }
 }
+
+export default PathParser;

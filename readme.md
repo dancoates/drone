@@ -15,6 +15,7 @@ npm install
 There are also several npm scripts set up:
 
 - `npm test` to run mocha tests
+- `npm run lint` to lint js files, this is also run while building
 - `npm run docs` to generate documentation
 - `npm run watch` to start webpack-dev-server and watch files
 - `npm run build` to create a production bundle
